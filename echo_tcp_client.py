@@ -8,7 +8,7 @@ import sys
 
 import argparse
 
-host = '10.0.1.11'
+host = '10.0.1.10'
 
 def echo_client(port):
     """ A simple echo client """

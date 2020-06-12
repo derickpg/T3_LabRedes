@@ -7,7 +7,7 @@ import socket
 import sys
 import argparse
 
-host = '10.0.1.11'
+host = '10.0.1.10'
 data_payload = 2048
 
 def echo_server(port):
