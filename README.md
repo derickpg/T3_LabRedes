@@ -1,2 +1,2 @@
 # T3_LabRedes
-Terceiro trabalho da disciplina de Laboratório de Redes de Computadores da Graduação em Ciência da Computação.
+O terceiro trabalho da disciplina de Laboratório de Redes de Computadores da Graduação em Ciência da Computação consiste em implementar um programa em \textit{Python}, usando \textit{Socket Raw}, que implemente a funcionalidade de NAPT (\textit{Network Address Port Translation}). O programa deverá ser validado utilizando a ferramenta de emulação Core, e testado para os tráfegos ICMP, TCP e UDP.
