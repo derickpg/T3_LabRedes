@@ -49,7 +49,7 @@ while inputs:
         eth_protocol = eth[2];
         
         interface = "eth0" if s is s0 else "eth1"
-        print("Received from "+interface)
+        #print("Received from "+interface)
         # print("MAC Dst: "+bytes_to_mac(eth[0]))
         # print("MAC Src: "+bytes_to_mac(eth[1]))
         # print("Type: "+hex(eth[2]) + " ~ {0}".format(eth[2]))
@@ -63,12 +63,14 @@ while inputs:
                 ip_protocol = ipx[6]
                 ip_interno = socket.inet_ntoa(ipx[8])
                 ip_destino = socket.inet_ntoa(ipx[9])
+
+                print("Received from "+interface + " IP: ( "+ip_interno +" > "+ip_externo+" )" + " ~~> " + ip_destino)
                 #ipheader = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
                 #          |V|T|LEN|IDE|OFF|T|P|CHECK|IP_DESTINO |IP_ORIGEM |
                 new_ip_header = ip_header[:12] + socket.inet_aton(ip_externo) + ip_header[16:]
 
                 if ip_protocol == 1 : # ICMP
-                    print("Pacote ICMP enviado : ("+ ip_interno +") " + ip_externo + " > " + ip_destino )
+                    # print("Pacote ICMP enviado : ("+ ip_interno +") " + ip_externo + " > " + ip_destino )
                     tabela.append(["ICMP", ip_interno, "", ip_externo, "", ip_destino, ""])
                     packet = eth_header + new_ip_header + packet[eth_length+ip_length:]
                     s1.send(packet)
@@ -85,10 +87,10 @@ while inputs:
                             muda_porta = True
                             break
                     if(muda_porta):
-                        new_tcp_header = (porta_origem+1) + tcp_header[4:]
+                        new_tcp_header = socket.inet_aton(str(porta_origem+1)) + tcp_header[4:]
                         porta_origem = porta_origem + 1
 
-                    print("Pacote TCP enviado : ("+ ip_interno + ":" + porta_origem +") " + ip_externo + ":" + porta_origem + " > " + ip_destino + ":" + porta_destino)
+                    # print("Pacote TCP enviado : ("+ ip_interno + ":" + porta_origem +") " + ip_externo + ":" + porta_origem + " > " + ip_destino + ":" + porta_destino)
                     tabela.append(["TCP", ip_interno, porta_origem, ip_externo, porta_origem, ip_destino, porta_destino])
                     packet = eth_header + new_ip_header + new_tcp_header + packet[eth_length+ip_length+tcp_length:]
                     s1.send(packet)
@@ -105,9 +107,9 @@ while inputs:
                             muda_porta = True
                             break
                     if(muda_porta):
-                        new_udp_header = (porta_origem+1) + udp_header[4:]
+                        new_udp_header = socket.inet_aton(str(porta_origem+1)) + udp_header[4:]
                         porta_origem = porta_origem + 1
-                    print("Pacote UDP enviado : ("+ ip_interno + ":" + porta_origem +") " + ip_externo + ":" + porta_origem + " > " + ip_destino + ":" + porta_destino)
+                    # print("Pacote UDP enviado : ("+ ip_interno + ":" + porta_origem +") " + ip_externo + ":" + porta_origem + " > " + ip_destino + ":" + porta_destino)
                     tabela.append(["UDP", ip_interno, porta_origem, ip_externo, porta_origem, ip_destino, porta_destino])
                     packet = eth_header + new_ip_header + new_udp_header + packet[eth_length+ip_length+udp_length:]
                     s1.send(packet)
@@ -122,13 +124,13 @@ while inputs:
                 ip_protocol = ipx[6]
                 ip_retorno_origem = socket.inet_ntoa(ipx[8])
                 ip_retorno_destino = socket.inet_ntoa(ipx[9])
-
+                print("Received from "+interface + " IP: " + ip_retorno_origem + " ~~> " + " ( "+ip_retorno_destino +" > "+ip_externo+" )" )
                 if ip_protocol == 1 : # ICMP
 
                     for linha in tabela :
                         if(linha[0] == "ICMP" and linha[3] == ip_retorno_destino and linha[4] == "" and linha[5] == ip_retorno_origem and linha[6] == "") :
                             ip_interno = linha[1]
-                            print("xxxxxxxxxxxxxxx")
+                            #print("xxxxxxxxxxxxxxx")
                             tabela.remove(linha)
                             break
 
@@ -136,11 +138,11 @@ while inputs:
                     #          |V|T|LEN|IDE|OFF|T|P|CHECK|IP_DESTINO |IP_ORIGEM |
                     new_ip_header = ip_header[:12] + socket.inet_aton(ip_interno) + ip_header[16:]
                     
-                    print("Pacote ICMP recebido : ("+ ip_interno +") " + ip_retorno_destino + " < " + ip_retorno_origem)
+                    # print("Pacote ICMP recebido : ("+ ip_interno +") " + ip_retorno_destino + " < " + ip_retorno_origem)
                     packet = eth_header + new_ip_header + packet[eth_length+ip_length:]
                     s0.send(packet)
 
-                    print(tabela)
+                    #print(tabela)
                 if ip_protocol == 6 : # TCP
                     tcp_header = packet[eth_length+ip_length:tcp_length+eth_length+ip_length]
                     tcpx = struct.unpack("!HHLLBBHHH", tcp_header)
@@ -148,9 +150,9 @@ while inputs:
                     porta_destino = tcpx[2]
 
                     for linha in tabela :
-                        if(linha[0] == "TCP" and linha[3] == ip_destinatario and linha[4] == porta_origem and linha[5] == ip_destino and linha[6] == porta_destino) :
+                        if(linha[0] == "TCP" and linha[3] == ip_retorno_destino and linha[4] == porta_destino and linha[5] == ip_retorno_origem and linha[6] == porta_origem) :
                             ip_interno = linha[1]
-                            porta_origem = linha[2]
+                            porta_destino = linha[2]
                             tabela.remove(linha)
                             break
 
@@ -158,8 +160,8 @@ while inputs:
                     #          |V|T|LEN|IDE|OFF|T|P|CHECK|IP_DESTINO |IP_ORIGEM |
                     new_ip_header = ip_header[:12] + socket.inet_aton(ip_interno) + ip_header[16:]
                     
-                    print("Pacote TCP recebido : ("+ ip_interno + ":" + porta_origem +") " + ip_destinatario + ":" + porta_origem + " < " + ip_destino + ":" + porta_destino)
-                    new_tcp_header = porta_origem + tcp_header[4:]
+                    # print("Pacote TCP recebido : ("+ ip_interno + ":" + porta_origem +") " + ip_destinatario + ":" + porta_origem + " < " + ip_destino + ":" + porta_destino)
+                    new_tcp_header = socket.inet_aton(str(porta_destino)) + tcp_header[4:]
                     packet = eth_header + new_ip_header + new_tcp_header + packet[eth_length+ip_length+tcp_length:]
                     s0.send(packet)
 
@@ -170,9 +172,9 @@ while inputs:
                     porta_destino = udpx[2]
 
                     for linha in tabela :
-                        if(linha[0] == "UDP" and linha[3] == ip_destinatario and linha[4] == porta_origem and linha[5] == ip_destino and linha[6] == porta_destino) :
+                        if(linha[0] == "UDP" and linha[3] == ip_retorno_destino and linha[4] == porta_destino and linha[5] == ip_retorno_origem and linha[6] == porta_origem) :
                             ip_interno = linha[1]
-                            porta_origem = linha[2]
+                            porta_destino = linha[2]
                             tabela.remove(linha)
                             break
 
@@ -180,8 +182,8 @@ while inputs:
                     #          |V|T|LEN|IDE|OFF|T|P|CHECK|IP_DESTINO |IP_ORIGEM |
                     new_ip_header = ip_header[:12] + socket.inet_aton(ip_interno) + ip_header[16:]
 
-                    print("Pacote UDP recebido : ("+ ip_interno + ":" + porta_origem +") " + ip_destinatario + ":" + porta_origem + " < " + ip_destino + ":" + porta_destino)
-                    new_udp_header =  porta_origem + udp_header[4:]
+                    #print("Pacote UDP recebido : ("+ ip_interno + ":" + porta_origem +") " + ip_destinatario + ":" + porta_origem + " < " + ip_destino + ":" + porta_destino)
+                    new_udp_header =  socket.inet_aton(str(porta_destino)) + udp_header[4:]
                     packet = eth_header + new_ip_header + udp_header + packet[eth_length+ip_length+udp_length:]
                     s0.send(packet)
 
